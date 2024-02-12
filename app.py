@@ -25,40 +25,43 @@ def detect_language(user_input, cv, model):
 def main():
     st.title("Language Detection App")
 
+    # Load the dataset
     data = load_dataset()
 
+    # Train the model
     cv, model = train_model(data)
 
+    # User input text
     user_input = st.text_area("Enter a Text:")
 
     if st.button("Detect Language"):
+        # Detect language
         detected_language = detect_language(user_input, cv, model)
         st.success(f"Detected Language: {detected_language}")
 
+    # Batch Language Detection
     st.header("Batch Language Detection")
-    st.write("Upload a CSV or Excel file with a 'text' column for batch language detection.")
+    st.write("Upload a CSV or Excel file for batch language detection.")
     uploaded_file = st.file_uploader("Choose a file", type=["csv", "xlsx"])
 
     if uploaded_file is not None:
-        # Read the uploaded file (CSV or Excel)
-        if uploaded_file.name.endswith('.csv'):
-            batch_data = pd.read_csv(uploaded_file)
-        elif uploaded_file.name.endswith(('.xls', '.xlsx')):
-            batch_data = pd.read_excel(uploaded_file)
-        else:
-            st.error("Invalid file format. Please upload a CSV or Excel file.")
-            return
+        # Read the uploaded file
+        batch_data = pd.read_csv(uploaded_file) if uploaded_file.type == "application/vnd.ms-excel" else pd.read_excel(uploaded_file)
 
         # Fill blanks in the 'text' column with "Not Available"
-        batch_data['text'].fillna("Not Available", inplace=True)
+        batch_data["text"].fillna("Not Available", inplace=True)
 
-        # Display all columns in a button-like GUI and let the user select the 'text' column
+        # Display all columns of the file
+        if st.checkbox("Show all columns"):
+            st.write("Columns in the uploaded file:")
+            st.write(batch_data.columns)
+
+        # Select the text column using a button
         selected_column = st.selectbox("Select the 'text' column:", batch_data.columns)
-        st.button(f"Show {selected_column}", st.write(batch_data[selected_column]))
 
-        if not batch_data.empty:
+        if not batch_data[selected_column].empty:
             # Add a new column for detected languages
-            batch_data["Detected Language"] = batch_data["text"].apply(lambda x: detect_language(x, cv, model))
+            batch_data["Detected Language"] = batch_data[selected_column].apply(lambda x: detect_language(x, cv, model))
 
             # Display the updated dataframe with detected languages
             st.write("Updated DataFrame with Detected Languages:")
@@ -66,13 +69,13 @@ def main():
 
             # Download the updated CSV file
             st.download_button(
-                label="Download Updated CSV",
-                data=batch_data.to_csv(index=False),
-                file_name="updated_language_detection.csv",
+                label="Download Updated File",
+                data=batch_data.to_csv(index=False) if uploaded_file.type == "application/vnd.ms-excel" else batch_data.to_excel(index=False),
+                file_name="updated_language_detection.csv" if uploaded_file.type == "application/vnd.ms-excel" else "updated_language_detection.xlsx",
                 key="download_button"
             )
         else:
-            st.warning("No valid data found in the 'text' column.")
+            st.warning("No valid data found in the selected column.")
 
 if __name__ == "__main__":
     main()
