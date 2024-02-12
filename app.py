@@ -51,34 +51,31 @@ def main():
         else:
             batch_data = pd.read_csv(uploaded_file)
 
-        # Fill blanks in the 'text' column with "Not Available"
-        batch_data["text"].fillna("Not Available", inplace=True)
-
-        # Display all columns of the file
-        if st.checkbox("Show all columns"):
-            st.write("Columns in the uploaded file:")
-            st.write(batch_data.columns)
-
-        # Select the text column using a button
+        # Show all columns in the file
+        st.write("Columns in the uploaded file:")
         selected_column = st.selectbox("Select the 'text' column:", batch_data.columns)
 
-        if not batch_data[selected_column].empty:
-            # Add a new column for detected languages
-            batch_data["Detected Language"] = batch_data[selected_column].apply(lambda x: detect_language(x, cv, model))
+        if st.button("Proceed"):
+            if selected_column in batch_data.columns:
+                # Fill blanks in the selected column with "Not Available"
+                batch_data[selected_column].fillna("Not Available", inplace=True)
 
-            # Display the updated dataframe with detected languages
-            st.write("Updated DataFrame with Detected Languages:")
-            st.write(batch_data)
+                # Add a new column for detected languages
+                batch_data["Detected Language"] = batch_data[selected_column].apply(lambda x: detect_language(x, cv, model))
 
-            # Download the updated CSV file
-            st.download_button(
-                label="Download Updated File",
-                data=batch_data.to_csv(index=False) if uploaded_file.type != "application/vnd.ms-excel" else None,
-                file_name="updated_language_detection.csv",
-                key="download_button"
-            )
-        else:
-            st.warning("No valid data found in the selected column.")
+                # Display the updated dataframe with detected languages
+                st.write("Updated DataFrame with Detected Languages:")
+                st.write(batch_data)
+
+                # Download the updated CSV file
+                st.download_button(
+                    label="Download Updated File",
+                    data=batch_data.to_csv(index=False) if uploaded_file.type != "application/vnd.ms-excel" else None,
+                    file_name="updated_language_detection.csv",
+                    key="download_button"
+                )
+            else:
+                st.warning("No valid 'text' column found in the selected column.")
 
 if __name__ == "__main__":
     main()
