@@ -46,7 +46,10 @@ def main():
 
     if uploaded_file is not None:
         # Read the uploaded file
-        batch_data = pd.read_csv(uploaded_file) if uploaded_file.type == "application/vnd.ms-excel" else pd.read_excel(uploaded_file)
+        if uploaded_file.type == "application/vnd.ms-excel":
+            batch_data = pd.read_excel(uploaded_file, engine='openpyxl')  # Specify the engine for Excel files
+        else:
+            batch_data = pd.read_csv(uploaded_file)
 
         # Fill blanks in the 'text' column with "Not Available"
         batch_data["text"].fillna("Not Available", inplace=True)
@@ -70,8 +73,8 @@ def main():
             # Download the updated CSV file
             st.download_button(
                 label="Download Updated File",
-                data=batch_data.to_csv(index=False) if uploaded_file.type == "application/vnd.ms-excel" else batch_data.to_excel(index=False),
-                file_name="updated_language_detection.csv" if uploaded_file.type == "application/vnd.ms-excel" else "updated_language_detection.xlsx",
+                data=batch_data.to_csv(index=False) if uploaded_file.type != "application/vnd.ms-excel" else None,
+                file_name="updated_language_detection.csv",
                 key="download_button"
             )
         else:
